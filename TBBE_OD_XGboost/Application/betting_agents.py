@@ -782,7 +782,7 @@ class XGBoostBettingAgent(BettingAgent):
         super().__init__(id, name, lengthOfRace, endOfInPlayBettingPeriod, influenced_by_opinions,
                          local_opinion, uncertainty, lower_op_bound, upper_op_bound)
         self.xgb_loaded_model = xgb.Booster()
-        self.xgb_loaded_model.load_model('trained_xgboost_model.json')  # the trained XGBoost model
+        self.xgb_loaded_model.load_model('/Users/joesouber/XGBoost_TBBE/TBBE_OD_XGboost/Application/trained_xgboost_model.json')  # the trained XGBoost model
         self.bettingInterval = 2  
         self.bettingTime = random.randint(5, 15)
         self.name = 'XGBoostBettingAgent'
