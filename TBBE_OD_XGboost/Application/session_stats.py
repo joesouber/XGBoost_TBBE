@@ -207,65 +207,52 @@ def transactions(trades, simId):
 #         writer.writerow(new_header)
 #         writer.writerows(tape)
 
-def getBalance(bettingAgents):
-    """
-    Retrieve the balance for each betting agent.
-    """
-    bettors = [agent for _, agent in bettingAgents.items()]
+import os
+import csv  # Make sure to import the csv module
 
+def getBalance(bettingAgents):
+    bettors = [agent for _, agent in bettingAgents.items()]
     balances = {}
     for i, bettor in enumerate(bettors):
         balances[i] = bettor.balance
-
     return balances
 
 def getXGboostTrainData(trades, simId, bettingAgents, agentDistances):
-    """
-    Process and format trade data for XGBoost training.
-    :trades: List of trade data.
-    :simId: Simulation ID.
-    :bettingAgents: Dictionary of betting agents.
-    :agentDistances: DataFrame containing distances for each competitor and time.
-    """
-    # Get the balances for each agent
     balances = getBalance(bettingAgents)
-
-    # Compute the ranks for each competitor and time
     agentDistances['rank'] = agentDistances.groupby('time')['distance'].rank(ascending=False, method='first').astype(int)
+    new_header = ["type", "competitorID", "time", "exchange", "odds", "agentID", "stake", "distance", "rank", "balance", "decision"]
+    tape = []
 
-    # Adjust the order of columns
-    new_header = ["type","competitorID", "time", "exchange", "odds",  "agentID", "stake", "distance", "rank", "balance", "decision"]
-
-    tape = [] # This will hold our final data rows
     for val in trades:
         competitor = val["competitor"]
         time = val["time"]
-
-        # Define a tolerance level to match times approximately
         tolerance = 1e-1
-        
-        # Filter the distances dataframe for matching competitor and times
         mask = (agentDistances['competitor'] == competitor) & (abs(agentDistances['time'] - time) < tolerance)
         filtered_df = agentDistances[mask]
         distance = filtered_df['distance'].values[0] if len(filtered_df) > 0 else 0 
         rank = filtered_df['rank'].values[0] if len(filtered_df) > 0 else 0 
-
-        # Extract and format data for backer
         backer_balance = balances[val["backer"]]
         backer_row = [val["type"], val["competitor"], val["time"], val["exchange"], val["odds"], val["backer"], val["stake"], distance, rank, backer_balance, "backer"]
         tape.append(backer_row)
-
-        # Extract and format data for layer
         layer_balance = balances[val["layer"]]
-        layer_row = [val["type"], val["competitor"], val["time"], val["exchange"], val["odds"],  val["layer"], val["stake"], distance, rank, layer_balance, "layer"]
+        layer_row = [val["type"], val["competitor"], val["time"], val["exchange"], val["odds"], val["layer"], val["stake"], distance, rank, layer_balance, "layer"]
         tape.append(layer_row)
 
-    # Write the final data rows to a CSV file
-    fileName = "getXGBOOstTrainingData_" + str(simId) + ".csv"
-    with open(fileName, 'w', newline='') as file:
+    # Write the final data rows to CSV files in the current working directory
+    xgboost_file = f"getXGBOOstTrainingData_{simId}.csv"
+    final_balances_file = f"200_new_final_balance_{simId}.csv"
+
+    with open(xgboost_file, 'w', newline='') as file:
         writer = csv.writer(file)
         writer.writerow(new_header)
         writer.writerows(tape)
+
+    with open(final_balances_file, 'w', newline='') as file:
+        writer = csv.writer(file)
+        writer.writerow(["agent_id", "balance"])
+        for agent_id, balance in balances.items():
+            writer.writerow([agent_id, balance])
+
 
 
 def createstats(bettingAgents, simId, trades, priceHistory, spreadHistory,AgentDistance):
