@@ -217,7 +217,7 @@ def getBalance(bettingAgents):
         balances[i] = bettor.balance
     return balances
 
-def getXGboostTrainData(trades, simId, bettingAgents, agentDistances):
+def generate_csv_files(trades, simId, bettingAgents, agentDistances):
     balances = getBalance(bettingAgents)
     agentDistances['rank'] = agentDistances.groupby('time')['distance'].rank(ascending=False, method='first').astype(int)
     new_header = ["type", "competitorID", "time", "exchange", "odds", "agentID", "stake", "distance", "rank", "balance", "decision"]
@@ -252,6 +252,7 @@ def getXGboostTrainData(trades, simId, bettingAgents, agentDistances):
         writer.writerow(["agent_id", "balance"])
         for agent_id, balance in balances.items():
             writer.writerow([agent_id, balance])
+
 
 
 
